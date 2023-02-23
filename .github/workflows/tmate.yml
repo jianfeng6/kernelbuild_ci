@@ -1,9 +1,6 @@
 
-name: Kernel CI
+name: TMate
 
-on:
-  workflow_dispatch:
-    
 env:
   TZ: Asia/Kolkata
   REPO: ${{ github.event.inputs.repo }}
