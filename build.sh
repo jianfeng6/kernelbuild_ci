@@ -1,55 +1,44 @@
 #!/bin/bash
-#set -e
-## Copy this script inside the kernel directory
-DIR=`readlink -f .`
-MAIN=`readlink -f ${DIR}/..`
-KERNEL_DEFCONFIG=vendor/alioth_defconfig
-export PATH="$MAIN/clang/bin:$PATH"
+ 
+function compile() 
+{
+ 
+source ~/.bashrc && source ~/.profile
+export LC_ALL=C && export USE_CCACHE=1
+ccache -M 100G
 export ARCH=arm64
-export SUBARCH=arm64
-export KBUILD_COMPILER_STRING="$($MAIN/clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
-
-if ! [ -d "$MAIN/clang" ]; then
-echo "ZYC clang not found! Cloning..."
-if ! git clone -q https://gitlab.com/ZyCromerZ/clang.git --depth=1 --single-branch $MAIN/clang; then
-echo "Cloning failed! Aborting..."
-exit 1
-fi
-fi
-KERNEL_DIR=`pwd`
-ZIMAGE_DIR="$KERNEL_DIR/out/arch/arm64/boot"
-# Speed up build process
-MAKE="./makeparallel"
-BUILD_START=$(date +"%s")
-blue='\033[0;34m'
-cyan='\033[0;36m'
-yellow='\033[0;33m'
-red='\033[0;31m'
-nocol='\033[0m'
-
-echo "**** Kernel defconfig is set to $KERNEL_DEFCONFIG ****"
-echo -e "$blue***********************************************"
-echo "          BUILDING KERNEL          "
-echo -e "***********************************************$nocol"
-make $KERNEL_DEFCONFIG O=out CC=clang
+export KBUILD_BUILD_HOST=Anupam_Roy
+export KBUILD_BUILD_USER="Gorilla669"
+git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
+ 
+[ -d "out" ] && rm -rf AnyKernel && rm -rf out || mkdir -p out
+ 
+make O=out ARCH=arm64 RMX2001_defconfig
+ 
+PATH="${PWD}/clang/bin:${PATH}:${PWD}/clang/bin:${PATH}:${PWD}/clang/bin:${PATH}" \
 make -j$(nproc --all) O=out \
                       ARCH=arm64 \
-                      CC=clang \
-                      CROSS_COMPILE=aarch64-linux-gnu- \
-                      NM=llvm-nm \
-                      OBJDUMP=llvm-objdump \
-                      STRIP=llvm-strip
-
-TIME="$(date "+%Y%m%d-%H%M%S")"
-mkdir -p tmp
-cp -fp $ZIMAGE_DIR/Image.gz tmp
-cp -fp $ZIMAGE_DIR/dtbo.img tmp
-cp -fp $ZIMAGE_DIR/dtb tmp
-cp -rp ./anykernel/* tmp
-cd tmp
-7za a -mx9 tmp.zip *
-cd ..
-rm *.zip
-cp -fp tmp/tmp.zip RealKing-Alioth-MiUi-$TIME.zip
-rm -rf tmp
-echo $TIME
+                      CC="clang" \
+                      LD=ld.lld \
+		      AR=llvm-ar \
+		      NM=llvm-nm \
+		      OBJCOPY=llvm-objcopy \
+		      OBJDUMP=llvm-objdump \
+                      CLANG_TRIPLE=aarch64-linux-gnu- \
+                      CROSS_COMPILE="${PWD}/clang/bin/aarch64-linux-gnu-" \
+                      CROSS_COMPILE_ARM32="${PWD}/clang/bin/arm-linux-gnueabi-" \
+                      CONFIG_NO_ERROR_ON_MISMATCH=y
+}
+ 
+function zupload()
+{
+git clone --depth=1 https://github.com/Johny8988/AnyKernel3.git AnyKernel
+cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
+cd AnyKernel
+zip -r9 ThunderStorm-lto-KERNEL-RMX2001.zip *
+curl -sL https://git.io/file-transfer | sh
+./transfer wet ThunderStorm-lto-KERNEL-RMX2001.zip
+}
+ 
+compile
+zupload
