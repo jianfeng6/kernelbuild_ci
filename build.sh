@@ -13,7 +13,7 @@ git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
  
 [ -d "out" ] && rm -rf AnyKernel && rm -rf out || mkdir -p out
  
-make O=out ARCH=arm64 RMX2001_defconfig
+make O=out ARCH=arm64 alioth_defconfig
  
 PATH="${PWD}/clang/bin:${PATH}:${PWD}/clang/bin:${PATH}:${PWD}/clang/bin:${PATH}" \
 make -j$(nproc --all) O=out \
